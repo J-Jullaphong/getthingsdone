@@ -1,0 +1,197 @@
+{% extends 'todo/base.html' %}
+
+{% block content %}
+<style>
+    .todo-card img {
+        max-height: 200px;
+        width: 100%;
+        object-fit: contain;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .todo-image-preview {
+        width: 100%;
+        max-height: 200px;
+        object-fit: contain;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+    }
+</style>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>GetThingsDone</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTodoModal">
+            + Add Task
+        </button>
+    </div>
+
+    <div class="row" id="todoBoard">
+        {% for status_key, status_label in status_columns %}
+            <div class="col-md-4">
+                <div class="card h-100 {% if status_key == 'PENDING' %}border-warning{% elif status_key == 'IN_PROGRESS' %}border-primary{% else %}border-success{% endif %}">
+                    <div class="card-header text-center fw-bold">{{ status_label }}</div>
+                    <div class="card-body p-2 sortable" data-status="{{ status_key }}">
+                        {% for todo in todos %}
+                            {% if todo.status == status_key %}
+                                <div class="card mb-2 shadow-sm todo-card {% if todo.is_overdue %}bg-danger bg-opacity-20{% endif %}"
+                                     data-id="{{ todo.id }}" data-bs-toggle="modal" data-bs-target="#todoModal"
+                                     data-url="{% url 'todo:todo_update' todo.id %}">
+                                    <div class="card-body p-2">
+                                        {% if todo.image %}
+                                            <img src="{{ todo.image.url }}" alt="{{ todo.title }}" class="img-fluid mb-2 rounded">
+                                        {% endif %}
+                                        <h5 class="mb-0">{{ todo.title }}</h5>
+                                        {% if todo.description %}
+                                            <p class="mb-1 text-muted" style="font-size: 0.875rem;">
+                                                {{ todo.description|truncatechars:100 }}
+                                            </p>
+                                        {% endif %}
+                                        {% if todo.due_date %}
+                                            <small class="text-muted d-block">
+                                                Due: {{ todo.due_date|date:"M d, Y H:i" }}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="modal fade" id="todoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content" id="modalContent">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.sortable').forEach(function (el) {
+        new Sortable(el, {
+            group: 'todos',
+            animation: 150,
+            onAdd: function (evt) {
+                const todoCard = evt.item;
+                const todoId = evt.item.dataset.id;
+                const newStatus = evt.to.dataset.status;
+
+                $.ajax({
+                    url: `/todo/${todoId}/update/`,
+                    method: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}',
+                        status: newStatus
+                    },
+                    success: function (response) {
+                        console.log('Status updated');
+
+                        todoCard.classList.remove('bg-danger', 'bg-opacity-20');
+
+                        if (newStatus !== 'DONE' && response.is_overdue) {
+                            todoCard.classList.add('bg-danger', 'bg-opacity-20');
+                        }
+                    },
+                    error: function () {
+                        alert('Failed to update status.');
+                    }
+                });
+            }
+        });
+    });
+
+    $(document).on('click', '.todo-card', function () {
+        const url = $(this).data('url');
+        $.get(url, function (data) {
+            $('#modalContent').html(data);
+            $('#todoModal').modal('show');
+        });
+    });
+
+    $(document).on('submit', '#createTodoForm', function (e) {
+        e.preventDefault();
+        const form = $(this);
+        const formData = new FormData(form[0]);
+
+        $.ajax({
+            url: "{% url 'todo:todo_create' %}",
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function () {
+                $('#addTodoModal').modal('hide');
+                location.reload();
+            },
+            error: function () {
+                alert('Failed to create todo.');
+            }
+        });
+    });
+
+    $(document).on('submit', '#updateTodoForm', function (e) {
+        e.preventDefault();
+        const form = $(this)[0];
+        const url = $(form).attr('action');
+        const formData = new FormData(form);
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function () {
+                $('#todoModal').modal('hide');
+                location.reload();
+            },
+            error: function () {
+                alert('Failed to update todo.');
+            }
+        });
+    });
+
+
+    $(document).on('click', '#deleteTodoBtn', function () {
+        if (confirm('Delete this task?')) {
+            const url = $(this).data('url');
+            $.post(url, { csrfmiddlewaretoken: '{{ csrf_token }}' }, function () {
+                $('#todoModal').modal('hide');
+                location.reload();
+            });
+        }
+    });
+
+    function previewImage(input, previewContainerId) {
+        const file = input.files[0];
+        const previewContainer = document.getElementById(previewContainerId);
+        const img = previewContainer.querySelector('img');
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                img.src = e.target.result;
+                previewContainer.classList.remove('d-none');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            previewContainer.classList.add('d-none');
+            img.src = '';
+        }
+    }
+
+    $(document).on('change', '#createTodoForm input[type="file"]', function () {
+        previewImage(this, 'createImagePreview');
+    });
+
+    $(document).on('change', '#updateTodoForm input[type="file"]', function () {
+        previewImage(this, 'updateImagePreview');
+    });
+</script>
+
+{% include 'todo/partials/add_todo_modal.html' %}
+
+{% endblock %}

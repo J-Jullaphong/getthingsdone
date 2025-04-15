@@ -1,0 +1,28 @@
+<form method="post" enctype="multipart/form-data" id="updateTodoForm" action="{% url 'todo:todo_update' todo.id %}">
+    {% csrf_token %}
+    <div class="modal-header">
+        <h5 class="modal-title">Edit Todo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+        {{ form.as_p }}
+        <div id="updateImagePreview" class="mb-3 {% if not todo.image %}d-none{% endif %}">
+            {% if todo.image %}
+                <img src="{{ todo.image.url }}" class="img-fluid rounded shadow-sm todo-image-preview" alt="Preview">
+            {% else %}
+                <img src="" class="img-fluid rounded shadow-sm todo-image-preview" alt="Preview">
+            {% endif %}
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button"
+                class="btn btn-danger"
+                id="deleteTodoBtn"
+                data-url="{% url 'todo:todo_delete' todo.id %}">
+            <i class="bi bi-trash me-1"></i> Delete
+        </button>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-pencil-square me-1"></i> Update
+        </button>
+    </div>
+</form>

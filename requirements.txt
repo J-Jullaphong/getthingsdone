@@ -1,0 +1,7 @@
+django
+python-decouple
+psycopg2-binary
+boto3
+django-storages
+django-minio-storage
+pillow
