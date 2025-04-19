@@ -49,7 +49,7 @@ to this application are:
 - **todo_todo:** Custom table created to store todo items. This table is
   designed to store details of a to-do task, including its title, detailed
   description, current status, and optional metadata such as an associated
-  image and a due date. Each record is uniquely identified by a uuid and is
+  image and a due date. Each record is uniquely identified by a UUID and is
   linked to a specific user through the user_id foreign key.
   <img src="images/todo-schema.png" width="600" alt="Schema of the custom todo_todo table for storing todo items"/>
 
@@ -58,7 +58,7 @@ storage** for managing media files including images associated with todo items.
 
 ### **Object Storage:**
 
-**Type:** MinIO  
+**Type:** MinIO (Docker Container)  
 **Structure:**  
 Images uploaded by users are stored in the todo-media bucket. Django manages
 these images through the ImageField in the todo_todo table, storing only the
@@ -82,7 +82,7 @@ git clone https://github.com/J-Jullaphong/getthingsdone.git
 cd getthingsdone
 ```
 
-### 2. Create a .env file for externalized variables. (For simplicity in this project, you can just use default values):
+### 2. Create a .env file for externalized variables. (For simplicity in this project, you can just use default values in the sample.env):
 
 - **Linux and macOS**
   ```bash
@@ -119,7 +119,7 @@ is a variant of the `Layered Architecture Style`. This structure helps organize
 the application into clearly defined layers: models for data, views for
 business logic, and templates for presentation.
 
-### Models:
+### 1. Models:
 
 The model layer is designed to support all core features of the application,
 including ownership, deadline tracking, status updates, and optional image
@@ -142,7 +142,7 @@ This model represents each todo item. It includes:
 - An `is_overdue` property that checks whether the task is overdue and not
   marked as done.
 
-### Views:
+### 2. Views:
 
 Views are based on Django class-based views and use `LoginRequiredMixin` to
 ensure only authenticated users can access them.
@@ -156,7 +156,7 @@ ensure only authenticated users can access them.
 - **TodoDeleteView:** Allows deletion of a todo item.
 - **TodoUpdateView:** Enables editing an existing todo item.
 
-### Templates:
+### 3. Templates:
 
 Templates are built with Bootstrap 5 for responsive UI and follow a consistent
 layout using `base.html`.
@@ -166,7 +166,7 @@ layout using `base.html`.
 - **partial/add_todo_modal.html:** A modal for adding new todo items via AJAX.
 - **partial/update_todo_modal.html:** A modal for updating existing todo items with prefilled data.
 
-### Forms:
+### 4. Forms:
 
 Forms are based on Django's form system and customized to provide a better user
 experience using Bootstrap styling. They handle input validation, layout, and
@@ -182,7 +182,7 @@ integration with the database models.
 ### AJAX Functionality:
 
 AJAX is used to make the application feel more dynamic and interactive without
-requiring full page reloads:
+requiring full page reloads.
 
 - **Drag & Drop Status Updates:** Tasks can be dragged between status columns (
   e.g., from "Pending" to "In Progress"). The status is updated via AJAX in the
